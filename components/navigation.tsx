@@ -3,9 +3,10 @@
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
-import { Bell } from "lucide-react"
+import { Bell, ShoppingCart } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useCart } from "@/components/cart-provider"
 
 interface NavigationProps {
   unreadCount?: number
@@ -15,10 +16,13 @@ interface NavigationProps {
 export function Navigation({ unreadCount = 0, onNotificationClick }: NavigationProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const pathname = usePathname()
+  const { itemCount } = useCart()
 
   const menuItems = [
     { href: "/music", label: "MUSIC" },
     { href: "/marketplace", label: "SHOP" },
+    { href: "/cart", label: "CART" },
+    { href: "/admin", label: "ADMIN" },
     { href: "/community", label: "COMMUNITY" },
     { href: "/about", label: "ABOUT" },
   ]
@@ -32,7 +36,21 @@ export function Navigation({ unreadCount = 0, onNotificationClick }: NavigationP
           </Link>
 
           <div className="flex items-center gap-4">
-            {/* Notification Bell */}
+            <Link href="/cart">
+              <Button className="relative bg-transparent hover:bg-white/10 text-white border border-white/20 p-2" size="sm">
+                <ShoppingCart className="w-5 h-5" />
+                {itemCount > 0 && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="absolute -top-2 -right-2 bg-white text-black text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold"
+                  >
+                    {itemCount > 9 ? "9+" : itemCount}
+                  </motion.div>
+                )}
+              </Button>
+            </Link>
+
             <Button
               onClick={onNotificationClick}
               className="relative bg-transparent hover:bg-white/10 text-white border border-white/20 p-2"
@@ -50,7 +68,6 @@ export function Navigation({ unreadCount = 0, onNotificationClick }: NavigationP
               )}
             </Button>
 
-            {/* Hamburger Menu */}
             <Button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="bg-transparent hover:bg-white/10 text-white p-2"
@@ -72,7 +89,6 @@ export function Navigation({ unreadCount = 0, onNotificationClick }: NavigationP
         </div>
       </nav>
 
-      {/* Mobile Menu Overlay */}
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div

@@ -41,8 +41,8 @@ export default function HomePage() {
             <Link href="/community" className="hover:text-gray-300 transition-colors">
               Community
             </Link>
-            <Link href="/about" className="hover:text-gray-300 transition-colors">
-              About
+            <Link href="/admin" className="hover:text-gray-300 transition-colors">
+              Admin
             </Link>
           </motion.div>
         </div>

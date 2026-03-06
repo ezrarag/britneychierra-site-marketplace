@@ -1,48 +1,50 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Play, Pause, ExternalLink } from "lucide-react"
+import { Play, Pause, ExternalLink, ShoppingCart } from "lucide-react"
 import Image from "next/image"
-
-const tracks = [
-  {
-    id: 1,
-    title: "NEON DREAMS",
-    duration: "3:24",
-    image: "/placeholder.svg?height=300&width=300",
-    streams: "45K",
-  },
-  {
-    id: 2,
-    title: "MIDNIGHT VIBES",
-    duration: "2:58",
-    image: "/placeholder.svg?height=300&width=300",
-    streams: "32K",
-  },
-  {
-    id: 3,
-    title: "GOLDEN HOUR",
-    duration: "4:12",
-    image: "/placeholder.svg?height=300&width=300",
-    streams: "67K",
-  },
-  {
-    id: 4,
-    title: "ELECTRIC SOUL",
-    duration: "3:45",
-    image: "/placeholder.svg?height=300&width=300",
-    streams: "54K",
-  },
-]
+import { MusicTrack } from "@/lib/models"
+import { useCart, formatUsd } from "@/components/cart-provider"
 
 export default function MusicPage() {
-  const [currentTrack, setCurrentTrack] = useState<number | null>(null)
+  const [currentTrack, setCurrentTrack] = useState<string | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
+  const [tracks, setTracks] = useState<MusicTrack[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const { addItem } = useCart()
 
-  const handlePlayPause = (trackId: number) => {
+  useEffect(() => {
+    const loadTracks = async () => {
+      try {
+        const res = await fetch("/api/music", { cache: "no-store" })
+        if (!res.ok) {
+          throw new Error("Failed to load music")
+        }
+        const data = (await res.json()) as { tracks: MusicTrack[] }
+        setTracks(data.tracks.filter((track) => track.active))
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Unknown error")
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    void loadTracks()
+  }, [])
+
+  const featuredLinks = useMemo(() => {
+    const firstTrack = tracks[0]
+    return {
+      spotify: firstTrack?.spotifyUrl,
+      apple: firstTrack?.appleMusicUrl,
+    }
+  }, [tracks])
+
+  const handlePlayPause = (trackId: string) => {
     if (currentTrack === trackId) {
       setIsPlaying(!isPlaying)
     } else {
@@ -55,7 +57,6 @@ export default function MusicPage() {
     <div className="min-h-screen bg-black text-white">
       <div className="pt-24 pb-16 px-6">
         <div className="container mx-auto max-w-4xl">
-          {/* Header */}
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="mb-16">
             <h1 className="text-[6vw] md:text-[8vw] lg:text-[10vw] font-black leading-[0.8] tracking-tighter mb-8">
               <span className="text-white">MUSICAL</span>
@@ -67,28 +68,40 @@ export default function MusicPage() {
             </p>
 
             <div className="flex gap-6">
-              <Button className="bg-white text-black hover:bg-gray-200 px-8 py-3 text-lg font-bold">
-                <ExternalLink className="w-5 h-5 mr-2" />
-                SPOTIFY
+              <Button
+                asChild
+                className="bg-white text-black hover:bg-gray-200 px-8 py-3 text-lg font-bold"
+                disabled={!featuredLinks.spotify}
+              >
+                <a href={featuredLinks.spotify || "#"} target="_blank" rel="noreferrer">
+                  <ExternalLink className="w-5 h-5 mr-2" />
+                  SPOTIFY
+                </a>
               </Button>
               <Button
+                asChild
                 variant="outline"
                 className="border-white text-white hover:bg-white hover:text-black px-8 py-3 text-lg font-bold"
+                disabled={!featuredLinks.apple}
               >
-                <ExternalLink className="w-5 h-5 mr-2" />
-                APPLE MUSIC
+                <a href={featuredLinks.apple || "#"} target="_blank" rel="noreferrer">
+                  <ExternalLink className="w-5 h-5 mr-2" />
+                  APPLE MUSIC
+                </a>
               </Button>
             </div>
           </motion.div>
 
-          {/* Latest Tracks */}
           <motion.section
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
             className="mb-16"
           >
-            <h2 className="text-4xl font-black tracking-wider mb-12">LATEST TRACKS</h2>
+            <h2 className="text-4xl font-black tracking-wider mb-4">LATEST TRACKS</h2>
+            {isLoading && <p className="text-gray-400 mb-8">Loading tracks...</p>}
+            {error && <p className="text-red-400 mb-8">{error}</p>}
+
             <div className="space-y-6">
               {tracks.map((track, index) => (
                 <motion.div
@@ -99,11 +112,11 @@ export default function MusicPage() {
                 >
                   <Card className="bg-transparent border-white/10 hover:border-white/30 transition-all duration-300 group">
                     <CardContent className="p-8">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-4">
                         <div className="flex items-center gap-6">
                           <div className="relative">
                             <Image
-                              src={track.image || "/placeholder.svg"}
+                              src={track.imageUrl || "/placeholder.svg"}
                               alt={track.title}
                               width={80}
                               height={80}
@@ -126,21 +139,40 @@ export default function MusicPage() {
                             <h3 className="text-2xl font-bold tracking-wider mb-2">{track.title}</h3>
                             <div className="flex items-center gap-6 text-gray-400">
                               <span>{track.duration}</span>
-                              <span>{track.streams} STREAMS</span>
+                              <span>{Math.round(track.streams / 1000)}K STREAMS</span>
+                              <span>{formatUsd(track.priceCents)}</span>
                             </div>
                           </div>
                         </div>
 
-                        <Button
-                          onClick={() => handlePlayPause(track.id)}
-                          className="bg-white text-black hover:bg-gray-200 px-6 py-3"
-                        >
-                          {currentTrack === track.id && isPlaying ? (
-                            <Pause className="w-5 h-5" />
-                          ) : (
-                            <Play className="w-5 h-5" />
-                          )}
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            onClick={() =>
+                              addItem({
+                                type: "music",
+                                id: track.id,
+                                title: track.title,
+                                imageUrl: track.imageUrl,
+                                unitPriceCents: track.priceCents,
+                              })
+                            }
+                            className="bg-white text-black hover:bg-gray-200 px-4 py-3"
+                            disabled={track.priceCents <= 0}
+                          >
+                            <ShoppingCart className="w-4 h-4 mr-2" />
+                            ADD
+                          </Button>
+                          <Button
+                            onClick={() => handlePlayPause(track.id)}
+                            className="bg-white text-black hover:bg-gray-200 px-6 py-3"
+                          >
+                            {currentTrack === track.id && isPlaying ? (
+                              <Pause className="w-5 h-5" />
+                            ) : (
+                              <Play className="w-5 h-5" />
+                            )}
+                          </Button>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>

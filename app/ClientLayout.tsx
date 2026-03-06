@@ -5,6 +5,7 @@ import { useState } from "react"
 import { Toaster } from "sonner"
 import { Navigation } from "@/components/navigation"
 import { NotificationCenter } from "@/components/notification-center"
+import { CartProvider } from "@/components/cart-provider"
 
 interface ClientLayoutProps {
   children: React.ReactNode
@@ -15,7 +16,7 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
   const [unreadCount, setUnreadCount] = useState(0)
 
   return (
-    <>
+    <CartProvider>
       <Navigation unreadCount={unreadCount} onNotificationClick={() => setIsNotificationOpen(!isNotificationOpen)} />
       <NotificationCenter
         isOpen={isNotificationOpen}
@@ -34,6 +35,6 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
           },
         }}
       />
-    </>
+    </CartProvider>
   )
 }

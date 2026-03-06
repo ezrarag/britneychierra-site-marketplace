@@ -1,30 +1,66 @@
-# Refined prompt guidance
+# Britney Chierra Site Marketplace
 
-*Automatically synced with your [v0.dev](https://v0.dev) deployments*
+## What Was Added
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/ezras-projects-a5d28798/v0-refined-prompt-guidance)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.dev-black?style=for-the-badge)](https://v0.dev/chat/projects/1qG1yAF2hyD)
+- Admin area in hamburger menu (`/admin`)
+- Password-gated admin dashboard (default password: `temp123`)
+- Firebase-backed music + shop catalog APIs
+- Seed endpoint to move default entries into Firestore
+- Cart that supports both music and shop items
+- Stripe Checkout API route ready for Connect destination account
 
-## Overview
+## Data Audit
 
-This repository will stay in sync with your deployed chats on [v0.dev](https://v0.dev).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.dev](https://v0.dev).
+Hard-coded arrays were previously in:
+- `app/music/page.tsx`
+- `app/marketplace/page.tsx`
 
-## Deployment
+Audit details: `AUDIT.md`
 
-Your project is live at:
+## Required Environment Variables
 
-**[https://vercel.com/ezras-projects-a5d28798/v0-refined-prompt-guidance](https://vercel.com/ezras-projects-a5d28798/v0-refined-prompt-guidance)**
+Create `.env.local` with:
 
-## Build your app
+```bash
+# Admin UI password (optional; defaults to temp123)
+ADMIN_DASHBOARD_PASSWORD=temp123
 
-Continue building your app on:
+# Firebase client (public)
+NEXT_PUBLIC_FIREBASE_API_KEY=
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
+NEXT_PUBLIC_FIREBASE_APP_ID=
 
-**[https://v0.dev/chat/projects/1qG1yAF2hyD](https://v0.dev/chat/projects/1qG1yAF2hyD)**
+# Firebase Admin (server)
+FIREBASE_PROJECT_ID=
+FIREBASE_CLIENT_EMAIL=
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
 
-## How It Works
+# Stripe
+STRIPE_SECRET_KEY=
+STRIPE_CONNECT_ACCOUNT_ID=
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+```
 
-1. Create and modify your project using [v0.dev](https://v0.dev)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+## How Admin Works
+
+1. Open `/admin`
+2. Sign in with password (`temp123` unless overridden)
+3. Click `Seed Firestore from current defaults` once (after Firebase env vars are set)
+4. Add/edit/delete entries in Music and Shop
+
+## Stripe Checkout
+
+`POST /api/checkout` creates a Checkout Session from the cart.
+
+- Uses catalog prices from Firestore (`priceCents`)
+- Supports optional Connect destination transfer when `STRIPE_CONNECT_ACCOUNT_ID` is set
+
+## Development
+
+```bash
+pnpm install
+pnpm dev
+```
