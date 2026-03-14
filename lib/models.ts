@@ -42,3 +42,44 @@ export interface AdminChangeRequest {
   priority: AdminChangePriority
   createdAt: string
 }
+
+export interface AboutStat {
+  value: string
+  label: string
+}
+
+export interface AboutTimelineItem {
+  year: string
+  title: string
+  description: string
+}
+
+export interface AboutServiceItem {
+  title: string
+  description: string
+}
+
+export interface AboutTeamMember {
+  name: string
+  role: string
+  bio: string
+  imageUrl: string
+}
+
+export interface AboutPageContent {
+  heroEyebrow: string
+  heroTitle: string
+  heroIntro: string
+  heroQuote: string
+  heroImageUrl: string
+  missionTitle: string
+  missionBody: string
+  stats: AboutStat[]
+  timeline: AboutTimelineItem[]
+  services: AboutServiceItem[]
+  team: AboutTeamMember[]
+  ctaTitle: string
+  ctaBody: string
+  ctaLabel: string
+  ctaHref: string
+}

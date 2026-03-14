@@ -1,4 +1,4 @@
-import { MusicTrack, ShopItem } from "@/lib/models"
+import { AboutPageContent, MusicTrack, ShopItem } from "@/lib/models"
 
 export const seedMusicTracks: MusicTrack[] = [
   {
@@ -87,3 +87,69 @@ export const seedShopItems: ShopItem[] = [
     active: true,
   },
 ]
+
+export const seedAboutPageContent: AboutPageContent = {
+  heroEyebrow: "Artist profile",
+  heroTitle: "A visual, musical, and cultural world built with intention.",
+  heroIntro:
+    "Britney Chierra blends performance, style, and storytelling into a platform that feels cinematic, personal, and sharp. The About page is designed as a living editorial profile that can evolve with new eras, collaborations, and releases.",
+  heroQuote: "Every release should feel like a world, not just a post.",
+  heroImageUrl: "/placeholder.svg?height=1200&width=960",
+  missionTitle: "Creative direction with range",
+  missionBody:
+    "This space can explain the brand voice, the creative process, and the purpose behind the work. Use it for biography, vision, press framing, partnership context, or the story behind the platform itself.",
+  stats: [
+    { value: "10+", label: "Years shaping visual identity" },
+    { value: "25+", label: "Campaign and content concepts developed" },
+    { value: "3", label: "Core lanes: music, style, community" },
+  ],
+  timeline: [
+    {
+      year: "2019",
+      title: "Independent brand build",
+      description: "Defined the first cohesive aesthetic language across music, visuals, and online presence.",
+    },
+    {
+      year: "2022",
+      title: "Audience expansion",
+      description: "Shifted into broader content, stronger recurring formats, and deeper community engagement.",
+    },
+    {
+      year: "2026",
+      title: "Marketplace era",
+      description: "Connected music, products, and editorial storytelling inside one direct-to-audience platform.",
+    },
+  ],
+  services: [
+    {
+      title: "Music and release storytelling",
+      description: "Frame songs, visuals, and launches with consistent narrative direction across channels.",
+    },
+    {
+      title: "Style and product curation",
+      description: "Translate aesthetic taste into shoppable drops, recommendations, and branded looks.",
+    },
+    {
+      title: "Collaborative campaigns",
+      description: "Create partnership-ready brand language for sponsors, interviews, features, and joint projects.",
+    },
+  ],
+  team: [
+    {
+      name: "Britney Chierra",
+      role: "Founder / Creative Lead",
+      bio: "Sets the voice, aesthetic direction, and overall editorial point of view.",
+      imageUrl: "/placeholder.svg?height=800&width=640",
+    },
+    {
+      name: "Brand Studio",
+      role: "Design + Production",
+      bio: "Supports content systems, visuals, campaign execution, and digital experience.",
+      imageUrl: "/placeholder.svg?height=800&width=640",
+    },
+  ],
+  ctaTitle: "Build the next era",
+  ctaBody: "Use this section for booking, collaborations, partnerships, or a clean invitation to connect.",
+  ctaLabel: "Start a conversation",
+  ctaHref: "/community",
+}

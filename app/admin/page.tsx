@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
+import { AdminAboutEditor } from "@/components/admin/AdminAboutEditor"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -42,6 +43,12 @@ export default function AdminPage() {
   const [musicForm, setMusicForm] = useState<MusicTrack>(defaultMusicForm)
   const [shopForm, setShopForm] = useState<ShopItem>(defaultShopForm)
   const [message, setMessage] = useState<string | null>(null)
+  const [musicUploadFile, setMusicUploadFile] = useState<File | null>(null)
+  const [shopUploadFile, setShopUploadFile] = useState<File | null>(null)
+  const [isUploadingMusicImage, setIsUploadingMusicImage] = useState(false)
+  const [isUploadingShopImage, setIsUploadingShopImage] = useState(false)
+  const [musicUploadInputKey, setMusicUploadInputKey] = useState(0)
+  const [shopUploadInputKey, setShopUploadInputKey] = useState(0)
 
   const isAuthed = Boolean(adminPassword)
 
@@ -86,6 +93,89 @@ export default function AdminPage() {
     setAdminPassword("")
     setPasswordInput("")
     window.localStorage.removeItem(ADMIN_PASSWORD_KEY)
+    setMusicUploadFile(null)
+    setShopUploadFile(null)
+  }
+
+  const uploadImage = async ({
+    file,
+    folder,
+    entityId,
+  }: {
+    file: File
+    folder: "music" | "shop"
+    entityId: string
+  }) => {
+    const formData = new FormData()
+    formData.append("file", file)
+    formData.append("folder", folder)
+    formData.append("entityId", entityId)
+
+    const res = await fetch("/api/admin/upload", {
+      method: "POST",
+      headers: {
+        "x-admin-password": adminPassword,
+      },
+      body: formData,
+    })
+
+    const data = (await res.json()) as { error?: string; url?: string }
+
+    if (!res.ok || !data.url) {
+      throw new Error(data.error || "Image upload failed")
+    }
+
+    return data.url
+  }
+
+  const uploadMusicImage = async () => {
+    if (!musicUploadFile) {
+      setMessage("Choose a music image before uploading")
+      return
+    }
+
+    setIsUploadingMusicImage(true)
+
+    try {
+      const url = await uploadImage({
+        file: musicUploadFile,
+        folder: "music",
+        entityId: musicForm.id || musicForm.title || "music",
+      })
+      setMusicForm((prev) => ({ ...prev, imageUrl: url }))
+      setMusicUploadFile(null)
+      setMusicUploadInputKey((prev) => prev + 1)
+      setMessage("Music image uploaded to Firebase Storage")
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Music image upload failed")
+    } finally {
+      setIsUploadingMusicImage(false)
+    }
+  }
+
+  const uploadShopImage = async () => {
+    if (!shopUploadFile) {
+      setMessage("Choose a shop image before uploading")
+      return
+    }
+
+    setIsUploadingShopImage(true)
+
+    try {
+      const url = await uploadImage({
+        file: shopUploadFile,
+        folder: "shop",
+        entityId: shopForm.id || shopForm.title || "shop",
+      })
+      setShopForm((prev) => ({ ...prev, imageUrl: url }))
+      setShopUploadFile(null)
+      setShopUploadInputKey((prev) => prev + 1)
+      setMessage("Shop image uploaded to Firebase Storage")
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Shop image upload failed")
+    } finally {
+      setIsUploadingShopImage(false)
+    }
   }
 
   const saveMusic = async (event: FormEvent) => {
@@ -103,6 +193,8 @@ export default function AdminPage() {
 
     setMessage("Music entry saved")
     setMusicForm(defaultMusicForm)
+    setMusicUploadFile(null)
+    setMusicUploadInputKey((prev) => prev + 1)
     await loadData()
   }
 
@@ -121,6 +213,8 @@ export default function AdminPage() {
 
     setMessage("Shop entry saved")
     setShopForm(defaultShopForm)
+    setShopUploadFile(null)
+    setShopUploadInputKey((prev) => prev + 1)
     await loadData()
   }
 
@@ -164,14 +258,21 @@ export default function AdminPage() {
       },
     })
 
-    const data = (await res.json()) as { error?: string; result?: { seededMusic: number; seededShop: number } }
+    const data = (await res.json()) as {
+      error?: string
+      result?: { seededMusic: number; seededShop: number; seededAbout?: boolean }
+    }
 
     if (!res.ok) {
       setMessage(data.error || "Seed failed")
       return
     }
 
-    setMessage(`Seed complete. Added ${data.result?.seededMusic ?? 0} music / ${data.result?.seededShop ?? 0} shop`)
+    setMessage(
+      `Seed complete. Added ${data.result?.seededMusic ?? 0} music / ${data.result?.seededShop ?? 0} shop / ${
+        data.result?.seededAbout ? "1" : "0"
+      } about page.`,
+    )
     await loadData()
   }
 
@@ -217,6 +318,7 @@ export default function AdminPage() {
                 <TabsList>
                   <TabsTrigger value="music">Music</TabsTrigger>
                   <TabsTrigger value="shop">Shop</TabsTrigger>
+                  <TabsTrigger value="about">About</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="music" className="space-y-5">
@@ -266,6 +368,30 @@ export default function AdminPage() {
                           onChange={(event) => setMusicForm((prev) => ({ ...prev, imageUrl: event.target.value }))}
                           className="bg-transparent border-white/20"
                         />
+                        <div className="md:col-span-2 rounded-lg border border-white/10 p-3 space-y-3">
+                          <p className="text-sm text-gray-300">Upload artwork to Firebase Storage</p>
+                          <div className="flex flex-col gap-2 md:flex-row">
+                            <Input
+                              key={musicUploadInputKey}
+                              type="file"
+                              accept="image/*"
+                              onChange={(event) => setMusicUploadFile(event.target.files?.[0] ?? null)}
+                              className="bg-transparent border-white/20"
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="border-white/20"
+                              onClick={uploadMusicImage}
+                              disabled={!adminPassword || !musicUploadFile || isUploadingMusicImage}
+                            >
+                              {isUploadingMusicImage ? "Uploading..." : "Upload Image"}
+                            </Button>
+                          </div>
+                          <p className="text-xs text-gray-500">
+                            Uploads to `britneychierra/Music` and fills the image URL automatically.
+                          </p>
+                        </div>
                         <Input
                           placeholder="spotify url"
                           value={musicForm.spotifyUrl}
@@ -347,6 +473,30 @@ export default function AdminPage() {
                           onChange={(event) => setShopForm((prev) => ({ ...prev, imageUrl: event.target.value }))}
                           className="bg-transparent border-white/20"
                         />
+                        <div className="md:col-span-2 rounded-lg border border-white/10 p-3 space-y-3">
+                          <p className="text-sm text-gray-300">Upload product image to Firebase Storage</p>
+                          <div className="flex flex-col gap-2 md:flex-row">
+                            <Input
+                              key={shopUploadInputKey}
+                              type="file"
+                              accept="image/*"
+                              onChange={(event) => setShopUploadFile(event.target.files?.[0] ?? null)}
+                              className="bg-transparent border-white/20"
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="border-white/20"
+                              onClick={uploadShopImage}
+                              disabled={!adminPassword || !shopUploadFile || isUploadingShopImage}
+                            >
+                              {isUploadingShopImage ? "Uploading..." : "Upload Image"}
+                            </Button>
+                          </div>
+                          <p className="text-xs text-gray-500">
+                            Uploads to `britneychierra/Shop` and fills the image URL automatically.
+                          </p>
+                        </div>
                         <Input
                           placeholder="affiliate url"
                           value={shopForm.affiliateUrl}
@@ -396,6 +546,10 @@ export default function AdminPage() {
                       </Card>
                     ))}
                   </div>
+                </TabsContent>
+
+                <TabsContent value="about" className="space-y-5">
+                  <AdminAboutEditor adminPassword={adminPassword} onMessage={setMessage} />
                 </TabsContent>
               </Tabs>
             </>

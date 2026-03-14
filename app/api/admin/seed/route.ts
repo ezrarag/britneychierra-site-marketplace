@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { isValidAdminPassword } from "@/lib/admin-auth"
 import { seedCatalogIfEmpty } from "@/lib/catalog-server"
+import { seedAboutPageIfEmpty } from "@/lib/about-server"
 
 export async function POST(req: NextRequest) {
   const password = req.headers.get("x-admin-password")
@@ -9,7 +10,11 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const result = await seedCatalogIfEmpty()
+    const [catalogResult, aboutResult] = await Promise.all([seedCatalogIfEmpty(), seedAboutPageIfEmpty()])
+    const result = {
+      ...catalogResult,
+      ...aboutResult,
+    }
     return NextResponse.json({ ok: true, result })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error"
